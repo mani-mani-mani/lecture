@@ -8,6 +8,34 @@ var selected = null;
 var COMB; // 二項係数の計算をメモする
 const MAX = 10; // 最大の次元数
 
+//#####################################################################
+//#
+//# 制御点のリストを管理するクラス
+//#
+//####################################################################
+class ControlPoints {
+    constructor() {
+        this.list_ = [];
+    }
+    get(index) {
+        return this.list_[index];
+    }
+    add(x, y) {
+        this.list_.push([x, y]);
+    }
+    delete(index) {
+        this.list_.splice(index, 1);
+    }
+    update(index, x, y) {
+        this.list_[index] = [x, y];
+    }
+    length() {
+        return this.list_.length;
+    }
+    get list() {
+        return this.list_;
+    }
+}
 
 //#####################################################################
 //#
@@ -34,7 +62,7 @@ function init_combination() {
                 COMB[i][j] = 1;
                 continue;
             }
-            COMB[i][j] = COMB[i-1][j-1] + COMB[i-1][j];
+            COMB[i][j] = COMB[i - 1][j - 1] + COMB[i - 1][j];
         }
     }
 }
@@ -60,7 +88,7 @@ function transform(point, scalar) {
  */
 function bezier_coefficient(n, r, t) {
     // comination is already calculated in init_combination()
-    return COMB[n][r] * Math.pow(t, r) * Math.pow((1 - t), n - r);    
+    return COMB[n][r] * Math.pow(t, r) * Math.pow((1 - t), n - r);
 }
 
 /**
@@ -115,7 +143,7 @@ function draw() {
     var numsteps = Number(document.getElementById("input_numsteps").value);
     for (var i = 0; i <= numsteps; ++i) {
         var t = i / numsteps;
-        legacygl.vertex2(eval_quadratic_bezier(controlPoints, t));
+        legacygl.vertex2(eval_quadratic_bezier(controlPoints.list, t));
     }
     legacygl.end();
     // draw sample points
@@ -123,7 +151,7 @@ function draw() {
         legacygl.begin(gl.POINTS);
         for (var i = 0; i <= numsteps; ++i) {
             var t = i / numsteps;
-            legacygl.vertex2(eval_quadratic_bezier(controlPoints, t));
+            legacygl.vertex2(eval_quadratic_bezier(controlPoints.list, t));
         }
         legacygl.end();
     }
@@ -131,15 +159,15 @@ function draw() {
     if (document.getElementById("input_show_controlpoints").checked) {
         legacygl.color(0.2, 0.5, 1);
         legacygl.begin(gl.LINE_STRIP);
-        for (let i = 0; i < controlPoints.length; i++) {
-            const p = controlPoints[i];
+        for (let i = 0; i < controlPoints.length(); i++) {
+            const p = controlPoints.get(i);
             legacygl.vertex2(p);
         }
         legacygl.end();
         legacygl.begin(gl.POINTS);
-        for (let i = 0; i < controlPoints.length; i++) {
-            const p = controlPoints[i];
-            legacygl.vertex2(p);            
+        for (let i = 0; i < controlPoints.length(); i++) {
+            const p = controlPoints.get(i);
+            legacygl.vertex2(p);
         }
         legacygl.end();
     }
@@ -147,6 +175,9 @@ function draw() {
 function init() {
     // init combination
     init_combination();
+
+    // initialize control points
+    controlPoints = new ControlPoints();
 
     // OpenGL context
     canvas = document.getElementById("canvas");
@@ -183,12 +214,10 @@ function init() {
     camera = get_camera(canvas.width);
     camera.eye = [0, 0, 7];
     // points
-    controlPoints = [
-        [-1.5, 0.0],
-        [-1.0, 1.0],
-        [1.0, 1.0],
-        [1.5, 0.0],
-    ];
+    controlPoints.add(-1.5, 0.0);
+    controlPoints.add(-1.0, 1.0);
+    controlPoints.add(1.0, 1.0);
+    controlPoints.add(1.5, 0.0);
 
     // event handlers
     canvas.onmousedown = function (evt) {
@@ -200,15 +229,15 @@ function init() {
         // pick nearest object
         var viewport = [0, 0, canvas.width, canvas.height];
         var dist_min = 10000000;
-        for (var i = 0; i < controlPoints.length; ++i) {
-            var object_win = glu.project([controlPoints[i][0], controlPoints[i][1], 0],
+        for (var i = 0; i < controlPoints.length(); ++i) {
+            var object_win = glu.project([controlPoints.get(i)[0], controlPoints.get(i)[1], 0],
                 legacygl.uniforms.modelview.value,
                 legacygl.uniforms.projection.value,
                 viewport);
             var dist = vec2.dist(mouse_win, object_win);
             if (dist < dist_min) {
                 dist_min = dist;
-                selected = controlPoints[i];
+                selected = i;
             }
         }
     };
@@ -234,7 +263,11 @@ function init() {
             var s1 = vec3.dot(eye_to_mouse, plane_normal);
             var s2 = vec3.dot(eye_to_origin, plane_normal);
             var eye_to_intersection = vec3.scale([], eye_to_mouse, s2 / s1);
-            vec3.add(selected, camera.eye, eye_to_intersection);
+
+            var x = camera.eye[0] + eye_to_intersection[0];
+            var y = camera.eye[1] + eye_to_intersection[1];
+            var z = camera.eye[2] + eye_to_intersection[2];
+            controlPoints.update(selected, x, y);
             draw();
         }
     }
