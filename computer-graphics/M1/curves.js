@@ -5,7 +5,9 @@ var drawutil;
 var camera;
 var p0, p1, p2, p3;
 var selected = null;
-var COMB;
+var COMB; // 二項係数の計算をメモする
+const MAX = 10; // 最大の次元数
+
 
 //#####################################################################
 //#
@@ -19,7 +21,6 @@ var COMB;
  * nCr = n-1Cr-1 + n-1Cr
  */
 function init_combination() {
-    const MAX = 10;
     COMB = new Array(MAX + 1);
     for (let i = 0; i <= MAX; i++) {
         COMB[i] = new Array(MAX);
@@ -38,7 +39,7 @@ function init_combination() {
     }
 }
 
-/*
+/**
 * Affine transforamtion for a point
 *
 * @param point  {vec2}
@@ -58,21 +59,23 @@ function transform(point, scalar) {
  * @param {Number} r 
  */
 function bezier_coefficient(n, r, t) {
+    // comination is already calculated in init_combination()
     return COMB[n][r] * Math.pow(t, r) * Math.pow((1 - t), n - r);    
 }
 
 /**
- * n 次のベジェ曲線を求める関数
+ * n 次のベジェ曲線を求める関数（バーンスタイン基底関数）
  * 
  * @param {Array} pointList 制御点のリスト
  * @param {t} t パラメータ
  */
 function eval_quadratic_bezier(pointList, t) {
    
+    // 次元数は 制御点の数 - 1 になる
     var dimension = pointList.length - 1;
     var calcuratedPointList = [];
 
-    // ベジェ曲線の各点の計算
+    // ベジェ曲線の各項の計算
     for (let i = 0; i < pointList.length; i++) {
         var p = transform(pointList[i], bezier_coefficient(dimension, i, t));
         calcuratedPointList.push(p);
