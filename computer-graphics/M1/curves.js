@@ -3,9 +3,15 @@ var canvas;
 var legacygl;
 var drawutil;
 var camera;
-var p0, p1, p2;
+var p0, p1, p2, p3;
 var selected = null;
 var COMB;
+
+//#####################################################################
+//#
+//# ベジェ曲線に関する計算を行う
+//#
+//####################################################################
 
 /**
  * calcurate combination for bezier coefficient
@@ -33,6 +39,7 @@ function init_combination() {
 }
 
 /*
+* Affine transforamtion for a point
 *
 * @param point  {vec2}
 * @param scalar {Number}
@@ -54,24 +61,38 @@ function bezier_coefficient(n, r, t) {
     return COMB[n][r] * Math.pow(t, r) * Math.pow((1 - t), n - r);    
 }
 
-function eval_quadratic_bezier(p0, p1, p2, t) {
-    var controlPoints = [p0, p1, p2];
+/**
+ * n 次のベジェ曲線を求める関数
+ * 
+ * @param {Array} pointList 制御点のリスト
+ * @param {t} t パラメータ
+ */
+function eval_quadratic_bezier(pointList, t) {
+   
+    var dimension = pointList.length - 1;
+    var calcuratedPointList = [];
 
     // ベジェ曲線の各点の計算
-    var b0 = transform(p0, bezier_coefficient(2, 0, t));
-    var b1 = transform(p1, bezier_coefficient(2, 1, t));
-    var b2 = transform(p2, bezier_coefficient(2, 2, t));
-
-    // 計算結果の点
-    const pointList = [b0, b1, b2];
+    for (let i = 0; i < pointList.length; i++) {
+        var p = transform(pointList[i], bezier_coefficient(dimension, i, t));
+        calcuratedPointList.push(p);
+    }
 
     // 点の配列の (x,y) 座標を合計する関数
     const reducer = (accumulator, currentPoint) => {
         return [accumulator[0] + currentPoint[0], accumulator[1] + currentPoint[1]];
     }
 
-    return pointList.reduce(reducer, [0, 0]);
+    return calcuratedPointList.reduce(reducer, [0, 0]);
 }
+
+
+
+//#####################################################################
+//#
+//# 描画やユーザーとのインタラクティブな処理を行う
+//#
+//####################################################################
 
 function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -91,7 +112,7 @@ function draw() {
     var numsteps = Number(document.getElementById("input_numsteps").value);
     for (var i = 0; i <= numsteps; ++i) {
         var t = i / numsteps;
-        legacygl.vertex2(eval_quadratic_bezier(p0, p1, p2, t));
+        legacygl.vertex2(eval_quadratic_bezier([p0, p1, p2, p3], t));
     }
     legacygl.end();
     // draw sample points
@@ -99,7 +120,7 @@ function draw() {
         legacygl.begin(gl.POINTS);
         for (var i = 0; i <= numsteps; ++i) {
             var t = i / numsteps;
-            legacygl.vertex2(eval_quadratic_bezier(p0, p1, p2, t));
+            legacygl.vertex2(eval_quadratic_bezier([p0, p1, p2, p3], t));
         }
         legacygl.end();
     }
@@ -110,11 +131,13 @@ function draw() {
         legacygl.vertex2(p0);
         legacygl.vertex2(p1);
         legacygl.vertex2(p2);
+        legacygl.vertex2(p3);
         legacygl.end();
         legacygl.begin(gl.POINTS);
         legacygl.vertex2(p0);
         legacygl.vertex2(p1);
         legacygl.vertex2(p2);
+        legacygl.vertex2(p3);
         legacygl.end();
     }
 };
@@ -160,6 +183,8 @@ function init() {
     p0 = [1.0, 0.0];
     p1 = [0.0, -1.0];
     p2 = [0.0, 1.0];
+    p3 = [1,0, 1.0];
+
     // event handlers
     canvas.onmousedown = function (evt) {
         var mouse_win = this.get_mousepos(evt);
@@ -168,7 +193,7 @@ function init() {
             return;
         }
         // pick nearest object
-        var points = [p0, p1, p2];
+        var points = [p0, p1, p2, p3];
         var viewport = [0, 0, canvas.width, canvas.height];
         var dist_min = 10000000;
         for (var i = 0; i < 3; ++i) {
