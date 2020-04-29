@@ -171,6 +171,7 @@ function draw() {
         }
         legacygl.end();
     }
+    updateControlListTable();
 };
 function init() {
     // init combination
@@ -282,3 +283,72 @@ function init() {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1, 1, 1, 1);
 };
+
+function updateControlListTable() {
+    // show current control points list
+    const table = document.getElementById("controlPointsList");
+    table.innerHTML = "";
+    var tr = document.createElement("tr");
+    var title_p = document.createElement("th");
+    var title_x = document.createElement("th");
+    var title_y = document.createElement("th");
+    title_p.innerText = "制御点";
+    title_x.innerText = "X座標";
+    title_y.innerText = "Y座標";
+    tr.appendChild(title_p);
+    tr.appendChild(title_x);
+    tr.appendChild(title_y);
+    table.appendChild(tr);
+
+    for (let i = 0; i < controlPoints.length(); i++) {
+        const p = controlPoints.get(i);
+
+        var tr = document.createElement("tr");
+        var title = document.createElement("td");
+        var body_x = document.createElement("td");
+        var body_y = document.createElement("td");
+
+        var inputX = document.createElement("input");
+        var inputY = document.createElement("input");
+
+        title.innerText = "p" + i;
+        inputX.value = p[0];
+        inputY.value = p[1];
+
+        body_x.appendChild(inputX);
+        body_y.appendChild(inputY);
+        tr.appendChild(title);
+        tr.appendChild(body_x);
+        tr.appendChild(body_y);
+        table.appendChild(tr);
+    }
+
+    // input for new point
+    var tr = document.createElement("tr");
+    var title = document.createElement("td");
+    var body_x = document.createElement("td");
+    var body_y = document.createElement("td");
+    var inputX = document.createElement("input");
+    var inputY = document.createElement("input");
+    var button = document.createElement("button");
+
+    tr.id = "addNewControlPoint";
+    title.innerText = "新しい制御点"
+    title.style = "color: red";
+    inputX.placeholder = "X座標";
+    inputY.placeholder = "Y座標";
+    inputX.name = "new-x";
+    inputY.name = "new-y";
+    button.innerText = "+";
+    button.onclick = () => {
+        controlPoints.push([inputX.value, inputY.value]);
+    }
+
+    body_x.appendChild(inputX);
+    body_y.appendChild(inputY);
+    tr.appendChild(title);
+    tr.appendChild(body_x);
+    tr.appendChild(body_y);
+    tr.appendChild(button);
+    table.appendChild(tr);
+}
