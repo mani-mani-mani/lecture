@@ -5,9 +5,72 @@ var drawutil;
 var camera;
 var p0, p1, p2;
 var selected = null;
+var COMB;
+
+/**
+ * calcurate combination for bezier coefficient
+ * 
+ * nCr = n-1Cr-1 + n-1Cr
+ */
+function init_combination() {
+    const MAX = 10;
+    COMB = new Array(MAX + 1);
+    for (let i = 0; i <= MAX; i++) {
+        COMB[i] = new Array(MAX);
+    }
+
+    COMB[1][0] = 1;
+    COMB[1][1] = 1;
+    for (let i = 2; i <= MAX; i++) {
+        for (let j = 0; j <= i; j++) {
+            if (j == 0 || j == i) {
+                COMB[i][j] = 1;
+                continue;
+            }
+            COMB[i][j] = COMB[i-1][j-1] + COMB[i-1][j];
+        }
+    }
+}
+
+/*
+*
+* @param point  {vec2}
+* @param scalar {Number}
+*/
+function transform(point, scalar) {
+    const x = point[0] * scalar;
+    const y = point[1] * scalar;
+    return [x, y];
+}
+
+/**
+ * calculate bezier coefficient
+ * nCr * t^r * (1-t)^(n-r)
+ * 
+ * @param {Number} n
+ * @param {Number} r 
+ */
+function bezier_coefficient(n, r, t) {
+    return COMB[n][r] * Math.pow(t, r) * Math.pow((1 - t), n - r);    
+}
 
 function eval_quadratic_bezier(p0, p1, p2, t) {
-    return vec2.scaleAndAdd_ip(vec2.scale([], p0, 1 - t), p2, t);    // TODO
+    var controlPoints = [p0, p1, p2];
+
+    // ベジェ曲線の各点の計算
+    var b0 = transform(p0, bezier_coefficient(2, 0, t));
+    var b1 = transform(p1, bezier_coefficient(2, 1, t));
+    var b2 = transform(p2, bezier_coefficient(2, 2, t));
+
+    // 計算結果の点
+    const pointList = [b0, b1, b2];
+
+    // 点の配列の (x,y) 座標を合計する関数
+    const reducer = (accumulator, currentPoint) => {
+        return [accumulator[0] + currentPoint[0], accumulator[1] + currentPoint[1]];
+    }
+
+    return pointList.reduce(reducer, [0, 0]);
 }
 
 function draw() {
@@ -56,6 +119,9 @@ function draw() {
     }
 };
 function init() {
+    // init combination
+    init_combination();
+
     // OpenGL context
     canvas = document.getElementById("canvas");
     gl = canvas.getContext("experimental-webgl");
@@ -91,7 +157,7 @@ function init() {
     camera = get_camera(canvas.width);
     camera.eye = [0, 0, 7];
     // points
-    p0 = [5.0, 0.0];
+    p0 = [1.0, 0.0];
     p1 = [0.0, -1.0];
     p2 = [0.0, 1.0];
     // event handlers
