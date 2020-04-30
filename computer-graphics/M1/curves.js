@@ -21,20 +21,20 @@ class ControlPoints {
     get(index) {
         return this.list_[index];
     }
-    add(x, y) {
-        this.list_.push([x, y]);
+    add(x, y, w) {
+        this.list_.push([x, y, w]);
     }
     delete(index) {
         this.list_.splice(index, 1);
-    }
-    update(index, x, y) {
-        this.list_[index] = [x, y];
     }
     updateX(index, x) {
         this.list_[index][0] = x;
     }
     updateY(index, y) {
         this.list_[index][1] = y;
+    }
+    updateWeight(index, w) {
+        this.list_[index][2] = w;
     }
     length() {
         return this.list_.length;
@@ -128,22 +128,39 @@ function bezier_coefficient(n, r, t) {
 }
 
 /**
- * n 次のベジェ曲線を求める関数（バーンスタイン基底関数）
+ * n 次の有理ベジェ曲線を求める関数（バーンスタイン基底関数）
  * 
  * @param {Array} pointList 制御点のリスト
  * @param {t} t パラメータ
  */
-function eval_quadratic_bezier(pointList, t) {
-   
+function eval_bezier(pointList, t) {
     // 次元数は 制御点の数 - 1 になる
     var dimension = pointList.length - 1;
-    var calcuratedPointList = [];
 
-    // ベジェ曲線の各項の計算
+    // 有理ベジェ曲線の重みの合計の計算（正規化用）
+    var weightSum = 0;
     for (let i = 0; i < pointList.length; i++) {
-        var p = transform(pointList[i], bezier_coefficient(dimension, i, t));
+        var coefficient = bezier_coefficient(dimension, i, t);
+        var weight_coefficient = pointList[i][2] * coefficient;
+
+        weightSum += weight_coefficient;
+    }
+
+    // 計算した各項の点を格納するリスト
+    var calcuratedPointList = [];
+    
+    // 有理ベジェ曲線の各項の計算
+    for (let i = 0; i < pointList.length; i++) {
+        var xy = [pointList[i][0], pointList[i][1]];
+        var weight = pointList[i][2];
+
+        // 正規化する
+        var normalized_coefficient = (weight / weightSum) * bezier_coefficient(dimension, i, t);
+        var p = transform(xy, normalized_coefficient);
+
         calcuratedPointList.push(p);
     }
+
 
     // 点の配列の (x,y) 座標を合計する関数
     const reducer = (accumulator, currentPoint) => {
@@ -275,11 +292,12 @@ function init() {
     drawutil = get_drawutil(gl, legacygl);
     camera = get_camera(canvas.width);
     camera.eye = [0, 0, 7];
-    // points
-    controlPoints.add(-1.5, 0.0);
-    controlPoints.add(-1.0, 1.0);
-    controlPoints.add(1.0, 1.0);
-    controlPoints.add(1.5, 0.0);
+
+    // 制御点の初期設定
+    controlPoints.add(-1.5, 0.0, 1.0);
+    controlPoints.add(-1.0, 1.0, 1.0);
+    controlPoints.add(1.0, 1.0, 1.0);
+    controlPoints.add(1.5, 0.0, 1.0);
 
     // event handlers
     canvas.onmousedown = function (evt) {
@@ -385,18 +403,24 @@ function updateControlListTable() {
         var title = document.createElement("td");
         var body_x = document.createElement("td");
         var body_y = document.createElement("td");
+        var body_w = document.createElement("td");
 
         var inputX = document.createElement("input");
         var inputY = document.createElement("input");
+        var inputWeight = document.createElement("input");
         var button = document.createElement("button");
 
         title.innerText = "p" + i;
         inputX.value = p[0];
         inputY.value = p[1];
+        inputWeight.value = p[2];
         inputX.dataset.pointXId = i;
         inputY.dataset.pointYId = i;
+        inputWeight.dataset.pointWId = i;
+
         inputX.onchange = value_changed;
         inputY.onchange = value_changed;
+        inputWeight.onchange = value_changed;
 
         button.dataset.index = i;
         button.innerText = "-";
@@ -437,4 +461,23 @@ function updateControlListTable() {
     tr.appendChild(body_y);
     tr.appendChild(button);
     table.appendChild(tr);
+}
+
+// ユーザーの入力で制御点の値を変更する
+function value_changed(e) {
+    var xid = e.srcElement.dataset.pointXId;
+    var yid = e.srcElement.dataset.pointYId;
+    var wid = e.srcElement.dataset.pointWId;
+    if (xid) {
+        controlPoints.updateX(xid, e.srcElement.value);
+    }
+    if (yid) {
+        controlPoints.updateY(yid, e.srcElement.value);
+    }
+    if (wid) {
+        controlPoints.updateWeight(wid, e.srcElement.value);
+    }
+    draw();
+}
+
 }
