@@ -7,6 +7,7 @@ var controlPoints;
 var selected = null;
 var COMB; // 二項係数の計算をメモする
 const MAX = 10; // 最大の次元数
+var bezierFunc; // ベジェ曲線の関数
 
 //#####################################################################
 //#
@@ -153,6 +154,28 @@ function eval_quadratic_bezier(pointList, t) {
 }
 
 
+/**
+ * ド・カステリョのアルゴリズム
+ * 
+ * 再帰的にベジェ曲線の点を求める
+ * 
+ * @param {Array} pointList 制御点 
+ * @param {Number} t パラメータ 
+ */
+function eval_deCasteljau_bezier(pointList, t) {
+    if (pointList.length == 1){ 
+        return pointList[0];
+    }
+
+    var nextPointList = [];
+    for (let i = 0; i < pointList.length - 1; i++) {
+        var b1 = transform(pointList[i], t);
+        var b2 = transform(pointList[i + 1], 1 - t);
+        nextPointList.push([b1[0] + b2[0], b1[1] + b2[1]]);
+    }
+
+    return eval_deCasteljau_bezier(nextPointList, t);
+}
 
 //#####################################################################
 //#
@@ -178,7 +201,7 @@ function draw() {
     var numsteps = Number(document.getElementById("input_numsteps").value);
     for (var i = 0; i <= numsteps; ++i) {
         var t = i / numsteps;
-        legacygl.vertex2(eval_quadratic_bezier(controlPoints.list, t));
+        legacygl.vertex2(bezierFunc(controlPoints.list, t));
     }
     legacygl.end();
     // draw sample points
@@ -186,7 +209,7 @@ function draw() {
         legacygl.begin(gl.POINTS);
         for (var i = 0; i <= numsteps; ++i) {
             var t = i / numsteps;
-            legacygl.vertex2(eval_quadratic_bezier(controlPoints.list, t));
+            legacygl.vertex2(bezierFunc(controlPoints.list, t));
         }
         legacygl.end();
     }
@@ -214,6 +237,9 @@ function init() {
 
     // initialize control points
     controlPoints = new ControlPoints();
+
+    // intialize bezier function
+    bezierFunc = eval_deCasteljau_bezier;
 
     // OpenGL context
     canvas = document.getElementById("canvas");
@@ -319,6 +345,22 @@ function init() {
     gl.clearColor(1, 1, 1, 1);
 };
 
+/**
+ * ベジェ曲線の関数を変える
+ */
+function updateBezierFunc(value) {
+    console.log(value)
+    if (value == 0) {
+        bezierFunc = eval_quadratic_bezier;
+    } else {
+        bezierFunc = eval_deCasteljau_bezier;
+    }
+    draw();
+}
+
+/**
+ * 制御点のリストを表示する。ユーザーの入力に対して制御点を変えられるようにする。
+ */
 function updateControlListTable() {
     // show current control points list
     const table = document.getElementById("controlPointsList");
