@@ -37,6 +37,16 @@ class ControlPoints {
     }
 }
 
+function value_insert() {
+    var x = document.getElementById("new-point-x").value;
+    var y = document.getElementById("new-point-y").value;
+
+    if (x && y) {
+        controlPoints.add(x, y);
+    }
+    draw();
+}
+
 //#####################################################################
 //#
 //# ベジェ曲線に関する計算を行う
@@ -337,12 +347,10 @@ function updateControlListTable() {
     title.style = "color: red";
     inputX.placeholder = "X座標";
     inputY.placeholder = "Y座標";
-    inputX.name = "new-x";
-    inputY.name = "new-y";
+    inputX.id = "new-point-x";
+    inputY.id = "new-point-y";
     button.innerText = "+";
-    button.onclick = () => {
-        controlPoints.push([inputX.value, inputY.value]);
-    }
+    button.onclick = value_insert;
 
     body_x.appendChild(inputX);
     body_y.appendChild(inputY);
