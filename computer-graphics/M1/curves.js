@@ -29,12 +29,30 @@ class ControlPoints {
     update(index, x, y) {
         this.list_[index] = [x, y];
     }
+    updateX(index, x) {
+        this.list_[index][0] = x;
+    }
+    updateY(index, y) {
+        this.list_[index][1] = y;
+    }
     length() {
         return this.list_.length;
     }
     get list() {
         return this.list_;
     }
+}
+
+function value_changed(e) {
+    var xid = e.srcElement.dataset.pointXId;
+    var yid = e.srcElement.dataset.pointYId;
+    if (xid) {
+        controlPoints.updateX(xid, e.srcElement.value);
+    }
+    if (yid) {
+        controlPoints.updateY(yid, e.srcElement.value);
+    }
+    draw();
 }
 
 function value_insert() {
@@ -324,6 +342,10 @@ function updateControlListTable() {
         title.innerText = "p" + i;
         inputX.value = p[0];
         inputY.value = p[1];
+        inputX.dataset.pointXId = i;
+        inputY.dataset.pointYId = i;
+        inputX.onchange = value_changed;
+        inputY.onchange = value_changed;
 
         body_x.appendChild(inputX);
         body_y.appendChild(inputY);
