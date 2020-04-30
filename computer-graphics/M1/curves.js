@@ -376,10 +376,11 @@ function updateControlListTable() {
     var title_p = document.createElement("th");
     var title_x = document.createElement("th");
     var title_y = document.createElement("th");
-    var title_y = document.createElement("th");
+    var title_w = document.createElement("th");
     title_p.innerText = "制御点";
     title_x.innerText = "X座標";
     title_y.innerText = "Y座標";
+    title_w.innerText = "重み";
     tr.appendChild(title_p);
     tr.appendChild(title_x);
     tr.appendChild(title_y);
