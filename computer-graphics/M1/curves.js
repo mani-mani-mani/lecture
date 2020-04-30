@@ -44,35 +44,6 @@ class ControlPoints {
     }
 }
 
-function value_changed(e) {
-    var xid = e.srcElement.dataset.pointXId;
-    var yid = e.srcElement.dataset.pointYId;
-    if (xid) {
-        controlPoints.updateX(xid, e.srcElement.value);
-    }
-    if (yid) {
-        controlPoints.updateY(yid, e.srcElement.value);
-    }
-    draw();
-}
-
-function value_delete(e) {
-    var index = e.srcElement.dataset.index;
-
-    controlPoints.delete(index);
-    draw();
-}
-
-function value_insert() {
-    var x = document.getElementById("new-point-x").value;
-    var y = document.getElementById("new-point-y").value;
-
-    if (x && y) {
-        controlPoints.add(x, y);
-    }
-    draw();
-}
-
 //#####################################################################
 //#
 //# ベジェ曲線に関する計算を行う
@@ -80,9 +51,11 @@ function value_insert() {
 //####################################################################
 
 /**
- * calcurate combination for bezier coefficient
+ * 二項計算の前処理を行う
  * 
  * nCr = n-1Cr-1 + n-1Cr
+ * 
+ * COMB[n][r] = nCr
  */
 function init_combination() {
     COMB = new Array(MAX + 1);
@@ -104,10 +77,10 @@ function init_combination() {
 }
 
 /**
-* Affine transforamtion for a point
+* 座標のアフィン変換を行う関数
 *
-* @param point  {vec2}
-* @param scalar {Number}
+* @param {vec2} point
+* @param {Number} scalar
 */
 function transform(point, scalar) {
     const x = point[0] * scalar;
@@ -116,11 +89,14 @@ function transform(point, scalar) {
 }
 
 /**
- * calculate bezier coefficient
+ * ベジェ曲線の係数を計算する
+ * 
  * nCr * t^r * (1-t)^(n-r)
  * 
- * @param {Number} n
- * @param {Number} r 
+ * @param {Number} n 次元
+ * @param {Number} r インデックス
+ * @param {Number} t パラメータ
+ * @param {Number} w 重み
  */
 function bezier_coefficient(n, r, t) {
     // comination is already calculated in init_combination()
@@ -180,7 +156,7 @@ function eval_bezier(pointList, t) {
  * @param {Number} t パラメータ 
  */
 function eval_deCasteljau_bezier(pointList, t) {
-    if (pointList.length == 1){ 
+    if (pointList.length == 1) {
         return pointList[0];
     }
 
@@ -197,6 +173,10 @@ function eval_deCasteljau_bezier(pointList, t) {
 //#####################################################################
 //#
 //# 描画やユーザーとのインタラクティブな処理を行う
+//#
+//# https://utokyo-iscg-2020-assigment-m1-spline.glitch.me/ とほとんど同じです
+//#
+//# 制御点の扱いなどが少し異なります
 //#
 //####################################################################
 
@@ -218,7 +198,8 @@ function draw() {
     var numsteps = Number(document.getElementById("input_numsteps").value);
     for (var i = 0; i <= numsteps; ++i) {
         var t = i / numsteps;
-        legacygl.vertex2(bezierFunc(controlPoints.list, t));
+            // ベジェ曲線の点を計算する
+            legacygl.vertex2(bezierFunc(controlPoints.list, t));
     }
     legacygl.end();
     // draw sample points
@@ -226,6 +207,7 @@ function draw() {
         legacygl.begin(gl.POINTS);
         for (var i = 0; i <= numsteps; ++i) {
             var t = i / numsteps;
+            // ベジェ曲線の点を計算する
             legacygl.vertex2(bezierFunc(controlPoints.list, t));
         }
         legacygl.end();
@@ -246,17 +228,20 @@ function draw() {
         }
         legacygl.end();
     }
+
+    // 制御点のリストを更新する
     updateControlListTable();
 };
 function init() {
-    // init combination
+
+    // 二項計算の前処理と
     init_combination();
 
-    // initialize control points
+    // 制御点を扱うオブジェクト
     controlPoints = new ControlPoints();
 
-    // intialize bezier function
-    bezierFunc = eval_deCasteljau_bezier;
+    // デフォルトでは多項式でベジェ曲線の計算をする
+    bezierFunc = eval_bezier;
 
     // OpenGL context
     canvas = document.getElementById("canvas");
@@ -347,7 +332,10 @@ function init() {
             var x = camera.eye[0] + eye_to_intersection[0];
             var y = camera.eye[1] + eye_to_intersection[1];
             var z = camera.eye[2] + eye_to_intersection[2];
-            controlPoints.update(selected, x, y);
+            
+            // 制御点を移動する
+            controlPoints.updateX(selected, x);
+            controlPoints.updateY(selected, y);
             draw();
         }
     }
@@ -363,26 +351,27 @@ function init() {
     gl.clearColor(1, 1, 1, 1);
 };
 
-/**
- * ベジェ曲線の関数を変える
- */
-function updateBezierFunc(value) {
-    console.log(value)
-    if (value == 0) {
-        bezierFunc = eval_quadratic_bezier;
-    } else {
-        bezierFunc = eval_deCasteljau_bezier;
-    }
-    draw();
-}
+
+//#####################################################################
+//#
+//# 追加した機能
+//#
+//# 1. 制御点の更新や表示、削除、追加ができるようにする
+//#
+//# 2. ベジェ曲線の計算方法を変更する
+//#
+//####################################################################
+
 
 /**
- * 制御点のリストを表示する。ユーザーの入力に対して制御点を変えられるようにする。
+ * 1. 制御点のリストを表示する。ユーザーの入力に対して制御点を変えられるようにする。
  */
 function updateControlListTable() {
     // show current control points list
     const table = document.getElementById("controlPointsList");
     table.innerHTML = "";
+
+    // 見出し
     var tr = document.createElement("tr");
     var title_p = document.createElement("th");
     var title_x = document.createElement("th");
@@ -396,6 +385,7 @@ function updateControlListTable() {
     tr.appendChild(title_y);
     table.appendChild(tr);
 
+    // 制御点のリストを表示する
     for (let i = 0; i < controlPoints.length(); i++) {
         const p = controlPoints.get(i);
 
@@ -428,14 +418,17 @@ function updateControlListTable() {
 
         body_x.appendChild(inputX);
         body_y.appendChild(inputY);
+        body_w.appendChild(inputWeight);
         tr.appendChild(title);
         tr.appendChild(body_x);
         tr.appendChild(body_y);
+        tr.appendChild(body_w);
         tr.appendChild(button);
         table.appendChild(tr);
     }
 
-    // input for new point
+
+    // 制御点を新しく追加する入力欄
     var tr = document.createElement("tr");
     var title = document.createElement("td");
     var body_x = document.createElement("td");
@@ -480,4 +473,35 @@ function value_changed(e) {
     draw();
 }
 
+// ユーザーの入力で制御点を削除する
+function value_delete(e) {
+    var index = e.srcElement.dataset.index;
+
+    controlPoints.delete(index);
+    draw();
+}
+
+// ユーザーの入力で制御点を追加する
+function value_insert() {
+    var x = document.getElementById("new-point-x").value;
+    var y = document.getElementById("new-point-y").value;
+    var w = 1.0;
+
+    if (x && y) {
+        controlPoints.add(x, y, w);
+    }
+    draw();
+}
+
+
+/**
+ * 2. ベジェ曲線の関数を変える
+ */
+function updateBezierFunc(value) {
+    if (value == 0) {
+        bezierFunc = eval_bezier;
+    } else {
+        bezierFunc = eval_deCasteljau_bezier;
+    }
+    draw();
 }
