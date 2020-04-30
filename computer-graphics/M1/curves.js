@@ -55,6 +55,13 @@ function value_changed(e) {
     draw();
 }
 
+function value_delete(e) {
+    var index = e.srcElement.dataset.index;
+
+    controlPoints.delete(index);
+    draw();
+}
+
 function value_insert() {
     var x = document.getElementById("new-point-x").value;
     var y = document.getElementById("new-point-y").value;
@@ -320,6 +327,7 @@ function updateControlListTable() {
     var title_p = document.createElement("th");
     var title_x = document.createElement("th");
     var title_y = document.createElement("th");
+    var title_y = document.createElement("th");
     title_p.innerText = "制御点";
     title_x.innerText = "X座標";
     title_y.innerText = "Y座標";
@@ -338,6 +346,7 @@ function updateControlListTable() {
 
         var inputX = document.createElement("input");
         var inputY = document.createElement("input");
+        var button = document.createElement("button");
 
         title.innerText = "p" + i;
         inputX.value = p[0];
@@ -347,11 +356,16 @@ function updateControlListTable() {
         inputX.onchange = value_changed;
         inputY.onchange = value_changed;
 
+        button.dataset.index = i;
+        button.innerText = "-";
+        button.onclick = value_delete;
+
         body_x.appendChild(inputX);
         body_y.appendChild(inputY);
         tr.appendChild(title);
         tr.appendChild(body_x);
         tr.appendChild(body_y);
+        tr.appendChild(button);
         table.appendChild(tr);
     }
 
