@@ -27,6 +27,7 @@ public class Main extends Canvas {
             case "dl":
                 break;
             case "b":
+                bezier = new BernsteinBezier();
                 break;
             default:
                 System.err.println("Unrecognized algorithm is choosed");
