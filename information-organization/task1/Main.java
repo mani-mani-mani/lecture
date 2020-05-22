@@ -13,7 +13,7 @@ public class Main extends Canvas {
     public static void main(String[] args) {
         System.out.println("choose algorithm");
         System.out.println("    dr:  De Casteljau -Recursive-");
-        System.out.println("    dl:  De Casteljau --");
+        System.out.println("    dl:  De Casteljau -Loop-");
         System.out.println("    b:   Bernstein");
 
         Scanner scan = new Scanner(System.in);
@@ -25,6 +25,7 @@ public class Main extends Canvas {
                 bezier = new DecasteljauRecursiveBezier();
                 break;
             case "dl":
+                bezier = new DecasteljauLoopBezier();
                 break;
             case "b":
                 bezier = new BernsteinBezier();
