@@ -55,12 +55,12 @@ public class BernsteinBezier implements Bezier {
     private Point2D point(List<Point2D> controlPoints, double t) {
         double x = 0;
         double y = 0;
-        int dimension = controlPoints.size() - 1;
+        int degree = controlPoints.size() - 1;
 
         for (int i = 0; i < controlPoints.size(); i++) {
-            int coefficient = this.binomial_coefficient.get(dimension).get(i);
-            x += controlPoints.get(i).getX() * coefficient * Math.pow(t, i) * Math.pow(1.0 - t, dimension - i);
-            y += controlPoints.get(i).getY() * coefficient * Math.pow(t, i) * Math.pow(1.0 - t, dimension - i);
+            int coefficient = this.binomial_coefficient.get(degree).get(i);
+            x += controlPoints.get(i).getX() * coefficient * Math.pow(t, i) * Math.pow(1.0 - t, degree - i);
+            y += controlPoints.get(i).getY() * coefficient * Math.pow(t, i) * Math.pow(1.0 - t, degree - i);
         }
         Point2D result = new Point2D.Double(x, y);
         return result;
