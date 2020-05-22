@@ -136,8 +136,8 @@ public class Main extends Canvas {
         if (this.points.size() > 0) {
             List<Point2D> bezierPoints = bezier.execute(this.points, numberOfPoints);
             for (int i = 0; i < bezierPoints.size() - 1; i++) {
-                g.drawLine((int)bezierPoints.get(i).getX(), (int)bezierPoints.get(i).getY(),
-                        (int)bezierPoints.get(i + 1).getX(), (int)bezierPoints.get(i + 1).getY());
+                g.drawLine((int) bezierPoints.get(i).getX(), (int) bezierPoints.get(i).getY(),
+                        (int) bezierPoints.get(i + 1).getX(), (int) bezierPoints.get(i + 1).getY());
             }
         }
     }
