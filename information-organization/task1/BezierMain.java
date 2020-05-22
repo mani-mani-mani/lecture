@@ -9,7 +9,7 @@ import java.util.Scanner;
 import object.*;
 import contract.*;
 
-public class Main extends Canvas {
+public class BezierMain extends Canvas {
     public static void main(String[] args) {
         System.out.println("choose algorithm");
         System.out.println("    dr:  De Casteljau -Recursive-");
@@ -40,7 +40,7 @@ public class Main extends Canvas {
 
         System.out.print("Input number of bezier step number => ");
         int numberOfPoints = Integer.parseInt(scan.next());
-        new Main(bezier, numberOfPoints);
+        new BezierMain(bezier, numberOfPoints);
     }
 
     private final int width = 500; // window width
@@ -50,7 +50,7 @@ public class Main extends Canvas {
     Bezier bezier;
     int numberOfPoints;
 
-    protected Main(Bezier bezier, int numberOfPoints) {
+    protected BezierMain(Bezier bezier, int numberOfPoints) {
         super();
         setSize(this.width, this.height);
         setBackground(Color.white);
