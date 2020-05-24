@@ -18,7 +18,7 @@ public class DecasteljauLoopBezier implements Bezier {
         return result;
     }
 
-    // get point recursively
+    // get point using for loop
     private Point2D point(List<Point2D> controlPoints, double t) {
         int degree = controlPoints.size() - 1;
 
